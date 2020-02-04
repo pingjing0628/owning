@@ -3,7 +3,6 @@ package controllers
 import (
 	"Users/pingjing/docker/goPractice/owning/app/model"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,7 +14,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	model := model.Products{}
+	model := model.Product{}
 
 	if err := model.FindAll(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -29,7 +28,7 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	model := model.Products{}
+	model := model.Product{}
 	params := mux.Vars(r)
 
 	if err := model.FindOne(bson.M{"productId": params["id"]}); err != nil {
@@ -46,19 +45,35 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	model := model.Products{}
+	product := model.Product{}
 
-	q := json.NewDecoder(r.Body).Decode(&model)
-	fmt.Println(q)
+	_ = json.NewDecoder(r.Body).Decode(&product)
 
-	if err := model.Insert(q); err != nil {
+	// fmt.Println(model.ProductName)
+
+	if err := product.Insert(product); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(&model)
+	json.NewEncoder(w).Encode(&product)
 }
 
-// func Store() {
+func UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
 
-// }
+	w.Header().Set("Content-Type", "application/json")
+
+	product := model.Product{}
+
+	_ = json.NewDecoder(r.Body).Decode(&product)
+
+	// fmt.Println(model.ProductName)
+
+	if err := product.Update(product); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(&product)
+}

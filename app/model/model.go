@@ -10,22 +10,22 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Users struct
-// type Users struct {
-// 	name string `bson:"name" json:"name"`
-// }
+type Shopping struct {
+	Accounts []User `bson:"accounts" json:"accounts"`
+}
 
-// ShoppingLists struct
-// type Shopping_lists struct {
-// 	// name string `bson:"name" json:"name"`
-// 	lists []Products `bson:"shoppingLists" json:"shoppingLists"`
-// }
+type User struct {
+	Name     string    `bson:"name" json:"name"`
+	Password string    `bson:"password" json:"password"`
+	Phone    string    `bson:"phone" json:"phone"`
+	Products []Product `bson:"products" json:"products"`
+}
 
-// product struct
 // uppercase an exported to json
-type Products struct {
+type Product struct {
 	ProductId    string `bson:"productId" json:"productId"`
 	ProductName  string `bson:"productName" json:"productName"`
 	Price        string `bson:"price" json:"price"`
@@ -39,8 +39,8 @@ const (
 
 // Get all product list
 // 放置型別為 collection 的指標
-func (p *Products) FindAll() error {
-	var shoppingLists []*Products
+func (p *Product) FindAll() error {
+	var shoppingLists []*Product
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -58,7 +58,7 @@ func (p *Products) FindAll() error {
 	// Finding multiple documents returns a cursor
 	// Iterating through the cursor allows us to decode documents one at a time
 	for cur.Next(ctx) {
-		list := Products{}
+		list := Product{}
 
 		// create a value into which the single document can be decoded
 		if err := cur.Decode(&list); err != nil {
@@ -76,7 +76,7 @@ func (p *Products) FindAll() error {
 }
 
 // Get single product list
-func (p *Products) FindOne(query bson.M) error {
+func (p *Product) FindOne(query bson.M) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -88,15 +88,13 @@ func (p *Products) FindOne(query bson.M) error {
 }
 
 // Insert a new single product
-func (p *Products) Insert(query bson.M) error {
+func (p *Product) Insert(product Product) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	c := database.Connect(collection)
 
-	list := Products{"2", "123", "333", "rrr", "2020"}
-
-	result, err := c.InsertOne(ctx, list)
+	result, err := c.InsertOne(ctx, product)
 
 	if err != nil {
 		log.Fatal(err)
@@ -109,5 +107,25 @@ func (p *Products) Insert(query bson.M) error {
 }
 
 // Update a product
+func (p *Product) Update(product Product) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	c := database.Connect(collection)
+
+	opts := options.Update().SetUpsert(true)
+
+	// find the document for which the _id field matches id and set the email to "newemail@example.com"
+	filter := bson.M{"productId": product.ProductId}
+	update := bson.M{"$set": product}
+
+	_, err := c.UpdateOne(ctx, filter, update, opts)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	return err
+}
 
 // Delete a product
